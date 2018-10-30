@@ -7,7 +7,7 @@ GENERATED_ECS_TEMPLATE_ABSOLUTE_PATH = $(shell pwd)/dist/$(ECS_SOURCE_TEMPLATE_P
 FLAG_SOURCE_TEMPLATE_PATH = aws/cloudformation/challenges/flag.yml
 GENERATED_FLAG_TEMPLATE_ABSOLUTE_PATH = $(shell pwd)/dist/$(FLAG_SOURCE_TEMPLATE_PATH)
 
-CHALLENGES_SOURCE_TEMPLATE_PATH = aws/cloudformation/challenges/challenges.yml
+CHALLENGES_SOURCE_TEMPLATE_PATH = aws/cloudformation/challenges/prodserver.yml
 GENERATED_CHALLENGES_TEMPLATE_ABSOLUTE_PATH = $(shell pwd)/dist/$(CHALLENGES_SOURCE_TEMPLATE_PATH)
 
 CHALLENGES_DEVSERVER_SOURCE_TEMPLATE_PATH = aws/cloudformation/challenges/devserver.yml
