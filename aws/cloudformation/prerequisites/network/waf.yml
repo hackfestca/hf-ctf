@@ -1,0 +1,118 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Provision the Hackfest CTF's Web Application Firewall and its rules
+Parameters:
+  ApplicationLoadBalancer:
+    Type: String
+
+Conditions:
+  ALBSpecified:
+    !Not [!Equals [!Ref ApplicationLoadBalancer, '']]
+
+Resources:
+  XssRule:
+    Type: AWS::WAFRegional::Rule
+    Properties:
+      MetricName: XssRuleMetric
+      Name: !Sub ${AWS::StackName}-XSSRule
+      Predicates:
+        - Type: XssMatch
+          Negated: false
+          DataId: !Ref WafXssSet
+
+  SqliRule:
+    Type: AWS::WAFRegional::Rule
+    Properties:
+      MetricName: SqliRuleMetric
+      Name: !Sub ${AWS::StackName}-SqliRule
+      Predicates:
+        - Type: SqlInjectionMatch
+          Negated: false
+          DataId: !Ref WafSqliSet
+
+  WafXssSet:
+    Type: AWS::WAFRegional::XssMatchSet
+    Properties:
+      Name: !Sub ${AWS::StackName}-XssSet
+      XssMatchTuples:
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: cookie
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: cookie
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: BODY
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: BODY
+          TextTransformation: HTML_ENTITY_DECODE
+
+  WafSqliSet:
+    Type: AWS::WAFRegional::SqlInjectionMatchSet
+    Properties:
+      Name: !Sub ${AWS::StackName}-SqliSet
+      SqlInjectionMatchTuples:
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: URI
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: QUERY_STRING
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: cookie
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: HEADER
+            Data: cookie
+          TextTransformation: HTML_ENTITY_DECODE
+        - FieldToMatch:
+            Type: BODY
+          TextTransformation: URL_DECODE
+        - FieldToMatch:
+            Type: BODY
+          TextTransformation: HTML_ENTITY_DECODE
+
+  WebAcl:
+    Type: AWS::WAFRegional::WebACL
+    Properties:
+      DefaultAction:
+        Type: ALLOW
+      MetricName: String
+      Name: !Sub ${AWS::StackName}-WebAcl
+      Rules:
+      - Action:
+          Type: BLOCK
+        Priority: 1
+        RuleId: !Ref XssRule
+      - Action:
+          Type: BLOCK
+        Priority: 2
+        RuleId: !Ref SqliRule
+
+  WebAclAssociation:
+    Type: AWS::WAFRegional::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref ApplicationLoadBalancer
+      WebACLId: !Ref WebAcl

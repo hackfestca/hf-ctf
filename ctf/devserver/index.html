@@ -1,0 +1,81 @@
+<!DOCTYPE HTML>
+<!--
+	Theory by TEMPLATED
+	templated.co @templatedco
+	Released for free under the Creative Commons Attribution 3.0 license (templated.co/license)
+-->
+<html>
+	<head>
+		<title>Project Infinity: Development server</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+	</head>
+	<body>
+
+		<!-- Header -->
+			<header id="header">
+				<div class="inner">
+					<a href="https://hackfest.ca/" class="logo">Website under construction</a>
+					<nav id="nav">
+						<a href="index.html">Project Inifity</a>
+						<a href="https://github.com/m6a-UdS/hf-ctf">GitHub</a>
+					</nav>
+					<a href="#navPanel" class="navPanelToggle"><span class="fa fa-bars"></span></a>
+				</div>
+			</header>
+
+		<!-- Banner -->
+			<section id="banner">
+				<h1>Project Inifinity</h1>
+				<p>This Website is under constructions. It uses AWS Fargate as it's backend.</p>
+			</section>
+
+		<!-- Three -->
+			<section id="three" class="wrapper special">
+				<div class="inner">
+					<header class="align-center">
+						<h2>Outgoing Webhook</h2>
+						<p>A classic WebHook debugger triggering our entrypoint SSRF</p>
+					</header>
+					<div class="flex flex-1" style="width:100%;">
+						<article style="width:100%;">
+							<form id="hook" method="post">
+							<div class="12u 12u$(xsmall)">
+							<input type="text" name="handler" id="handler" value="" placeholder="http://... (Your Webhook URL)" />
+							</div>
+							<br />
+							<br />
+							<footer style="text-align: center;">
+								<input type="submit" value="Test your webhook!" />
+							</footer>
+						</form>
+						</article>
+						<hr style="width:100%;" />
+						<article class="align-center" style="width:100%; text-align: center;">
+							<h2><span class="icon fa-eye" style=""></span>&nbsp;See the result!</h2>
+							<p id="result">Check how your handler responded; The result of your test will appear here</p>
+						</article>
+					</div>
+				</div>
+			</section>
+
+		<!-- Footer -->
+			<footer id="footer">
+				<div class="inner">
+					<div class="flex">
+						<div class="copyright">
+							&copy; Hackfest.ca. Design: <a href="https://templated.co">TEMPLATED</a>. Images: <a href="https://unsplash.com">Unsplash</a>.
+						</div>
+					</div>
+				</div>
+			</footer>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/skel.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>

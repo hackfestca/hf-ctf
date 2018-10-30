@@ -1,0 +1,6 @@
+.secrets
+dist
+ctf/hex_secretserver/app.py
+ctf/oct_secretserver/app.py
+ctf/other_secretserver/app.py
+ctf/short_secretserver/app.py

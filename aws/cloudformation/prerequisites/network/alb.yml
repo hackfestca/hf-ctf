@@ -1,0 +1,81 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Provision the Hackfest CTF's ALB
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  SubnetAZ0:
+    Type: AWS::EC2::Subnet::Id
+  SubnetAZ1:
+    Type: AWS::EC2::Subnet::Id
+  DomainName:
+    Type: String
+  Certificate:
+    Type: String
+  HostedZoneId:
+    Type: String
+
+Resources:
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Type: application
+      Scheme: internet-facing
+      Subnets:
+      - !Ref SubnetAZ0
+      - !Ref SubnetAZ1
+      SecurityGroups:
+      - !Ref HFCTFSecurityGroupAlb
+      Tags:
+      - Key: Name
+        Value: !Sub ${AWS::StackName}
+
+  HFCTFSecurityGroupAlb:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VpcId
+      GroupDescription: Allow access to the CTF from anywhere
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        FromPort: 443
+        ToPort: 443
+
+  HFCTFLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+      - CertificateArn: !Sub arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/${Certificate}
+      SslPolicy: ELBSecurityPolicy-TLS-1-2-2017-01
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref DefaultTargetGroup
+
+  DefaultTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VpcId
+      Port: 80
+      Protocol: HTTP
+
+Outputs:
+  ApplicationLoadBalancer:
+    Value: !Ref ApplicationLoadBalancer
+    Export:
+      Name: HF-CTF-ApplicationLoadBalancer
+  ApplicationLoadBalancerSecurityGroup:
+    Value: !Ref HFCTFSecurityGroupAlb
+    Export:
+      Name: HF-CTF-ApplicationLoadBalancerSecurityGroup
+  ApplicationLoadBalancerDns:
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: HF-CTF-ApplicationLoadBalancerDns
+  ApplicationLoadBalancerListenerArn:
+    Value: !Ref HFCTFLoadBalancerListener
+    Export:
+      Name: HF-CTF-LoadBalancerListenerArn

@@ -1,0 +1,68 @@
+version: '2'
+services:
+  web:
+    build:
+      context: webserver/
+      args:
+        - FLAG=${FLAG1}
+    ports:
+      - "8000:80"
+    links:
+    - hidey.corp
+    networks:
+      ssrf:
+        ipv4_address: 10.0.0.110
+  easy.corp:
+    environment:
+      - FLAG=${FLAG2}
+      - CUTENAME=easy
+    build: other_secretservers/
+    networks:
+      ssrf:
+        ipv4_address: 10.0.0.15
+  secrety.corp:
+    environment:
+      - FLAG=${FLAG3}
+      - CUTENAME=secrety
+    build: other_secretservers/
+    networks:
+      ssrf:
+        ipv4_address: 10.0.0.38
+  hidey.corp:
+    environment:
+      - FLAG=${FLAG4}
+      - CUTENAME=hidey
+    build: other_secretservers/
+    networks:
+      ssrf:
+        ipv4_address: ${SECRETSERVER_IP}
+  octy.corp:
+    environment:
+      - FLAG=${FLAG5}
+      - CUTENAME=octy
+    build: oct_secretserver/
+    networks:
+      ssrf:
+        ipv4_address: 10.34.0.67
+  hexy.corp:
+    environment:
+      - FLAG=${FLAG6}
+      - CUTENAME=hexy
+    build: hex_secretserver/
+    networks:
+      ssrf:
+        ipv4_address: 10.55.55.189
+  shorty.corp:
+    environment:
+      - FLAG=${FLAG7}
+      - CUTENAME=shorty
+    build: short_secretserver/
+    networks:
+      ssrf:
+        ipv4_address: 10.0.0.5
+networks:
+  ssrf:
+    ipam:
+      config:
+        - subnet: 10.0.0.0/8
+          gateway: 10.0.0.1

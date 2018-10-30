@@ -1,0 +1,40 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Provision the Hackfest CTF's Flags
+
+Parameters:
+  Secret:
+    Type: String
+    NoEcho: True
+
+Resources:
+  Flag10:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Description: Last flag to be found
+      Name: Flag10
+      Type: String
+      Value: !Ref Secret
+
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: TheLastRole
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            AWS:
+            - "arn:aws:iam::034879896190:role/DevServerRole"
+          Action:
+          - "sts:AssumeRole"
+      Policies:
+      - PolicyName: ReadFlag
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ssm:GetParameter
+            Resource: !Sub arn:aws:ssm:us-east-1:${AWS::AccountId}:parameter/${Flag10}

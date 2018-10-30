@@ -1,0 +1,215 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Provision the Hackfest CTF's first challenges
+
+Parameters:
+  DomainName:
+    Type: String
+  Certificate:
+    Type: String
+  HostedZoneId:
+    Type: String
+
+Resources:
+  Ec2Backend:
+    Type: AWS::EC2::Instance
+    DependsOn: ChallengesHandle
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+          - yum:
+            - docker
+            - docker-compose
+    Properties:
+      ImageId: ami-04681a1dbd79675a5
+      InstanceType: t2.nano
+      KeyName: hf-ctf
+      BlockDeviceMappings:
+      - DeviceName: /dev/xvda
+        Ebs:
+          VolumeSize: 8
+          VolumeType: gp2
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      NetworkInterfaces:
+      - AssociatePublicIpAddress: true
+        DeleteOnTermination: true
+        SubnetId: !ImportValue HF-CTF-SubnetAZ0
+        DeviceIndex: 0
+        GroupSet:
+        - !Ref Ec2BackendSecurityGroup
+      Tags:
+      - Key: Name
+        Value: !Sub ${AWS::StackName}
+      UserData:
+        Fn::Base64:
+          Fn::Sub:
+          - |
+            #!/bin/bash
+
+            yum install -y docker python-pip git
+            pip install docker-compose
+
+            aws s3 sync s3://${CTFBucket}/ctf /home/ec2-user/ctf/
+            cd /home/ec2-user/ctf/
+            service docker start
+
+            export FLAG1=`aws ssm get-parameter --name 'Flag1' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            export FLAG2=`aws ssm get-parameter --name 'Flag2' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            export FLAG3=`aws ssm get-parameter --name 'Flag3' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            export FLAG4=`aws ssm get-parameter --name 'Flag4' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            export FLAG5=`aws ssm get-parameter --name 'Flag5' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            export FLAG6=`aws ssm get-parameter --name 'Flag6' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            export FLAG7=`aws ssm get-parameter --name 'Flag7' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            export SECRETSERVER_IP=`aws ssm get-parameter --name 'SecretServerIp' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            docker-compose up -d
+
+            EC2_INSTANCE_ID=`wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`
+            /opt/aws/bin/cfn-signal -e $? "${ChallengesHandle}"
+          - CTFBucket: !ImportValue HF-CTF-ProdServer-Bucket
+
+  ChallengesHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  ChallengesWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: Ec2Backend
+    Properties:
+      Handle: !Ref ChallengesHandle
+      Timeout: 420    # 7 Minutes
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+      - !Ref HFCTFExecutionRole
+
+  HFCTFExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service: ec2.amazonaws.com
+          Action:
+          - "sts:AssumeRole"
+      Policies:
+      - PolicyName: !Sub ${AWS::StackName}-HF-CTFExecutionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ecr:GetAuthorizationToken
+            - ecr:BatchCheckLayerAvailability
+            - ecr:GetDownloadUrlForLayer
+            - ecr:BatchGetImage
+            - logs:Create*
+            - logs:Put*
+            Resource: '*'
+      - PolicyName: !Sub ${AWS::StackName}-HF-EC2SignalResource
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - cloudformation:SignalResource
+            Resource:
+            - !Sub arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:*
+      - PolicyName: !Sub ${AWS::StackName}-HF-SSMPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ssm:UpdateInstanceInformation
+            - ssm:ListAssociations
+            - ssm:ListInstanceAssociations
+            - ec2messages:GetMessages
+            Resource: '*'
+      - PolicyName: !Sub ${AWS::StackName}-HF-FlagsSSMPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ssm:GetParameter
+            Resource: '*'
+      - PolicyName: !Sub ${AWS::StackName}-HF-KMSPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - kms:Decrypt
+            Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/ea7ba50d-3adf-44b2-982e-3e044d12c79c
+      - PolicyName: !Sub ${AWS::StackName}-HF-CTFBucketPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:ListBucket
+            - s3:GetObject
+            Resource:
+            - Fn::Sub:
+              - arn:aws:s3:::${CTFBucket}/*
+              - CTFBucket: !ImportValue HF-CTF-ProdServer-Bucket
+            - Fn::Sub:
+              - arn:aws:s3:::${CTFBucket}
+              - CTFBucket: !ImportValue HF-CTF-ProdServer-Bucket
+
+  APIDomain:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub prod.${DomainName}
+      Type: CNAME
+      TTL: '300'
+      ResourceRecords:
+      - !ImportValue HF-CTF-ApplicationLoadBalancerDns
+
+  Ec2BackendSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !ImportValue HF-CTF-VPC
+      GroupDescription: Access to the EC2 Backend only from the ALB
+      SecurityGroupIngress:
+      - SourceSecurityGroupId: !ImportValue HF-CTF-ApplicationLoadBalancerSecurityGroup
+        IpProtocol: tcp
+        FromPort: 8000
+        ToPort: 8000
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+
+  HFCTFTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !ImportValue HF-CTF-VPC
+      Port: 8000
+      Protocol: HTTP
+      TargetType: instance
+      Targets:
+      - Id: !Ref Ec2Backend
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+
+  HttpListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !ImportValue HF-CTF-LoadBalancerListenerArn
+      Priority: 1
+      Conditions:
+      - Field: host-header
+        Values:
+        - !Sub prod.${DomainName}
+      Actions:
+      - TargetGroupArn: !Ref HFCTFTargetGroup
+        Type: forward

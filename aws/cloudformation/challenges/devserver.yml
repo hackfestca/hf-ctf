@@ -1,0 +1,208 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Provision the Hackfest CTF's Development Server
+
+Parameters:
+  DomainName:
+    Type: String
+  Certificate:
+    Type: String
+  HostedZoneId:
+    Type: String
+
+Resources:
+  DevServerWebsiteCloudfront:
+      Type: AWS::CloudFront::Distribution
+      Properties:
+        DistributionConfig:
+          Comment: Cloudfront Distribution pointing to the Development Server's S3 bucket
+          Aliases:
+          - !Sub dev.${DomainName}
+          Origins:
+          - DomainName: !ImportValue HF-CTF-DevServer-BucketDomain
+            Id: S3Origin
+            S3OriginConfig: {}
+          Enabled: true
+          HttpVersion: 'http2'
+          DefaultRootObject: index.html
+          DefaultCacheBehavior:
+            AllowedMethods:
+            - GET
+            - HEAD
+            Compress: true
+            TargetOriginId: S3Origin
+            ForwardedValues:
+              QueryString: false
+              Cookies:
+                Forward: none
+            ViewerProtocolPolicy: redirect-to-https
+          PriceClass: PriceClass_100
+          ViewerCertificate:
+            AcmCertificateArn: !Sub arn:aws:acm:${AWS::Region}:${AWS::AccountId}:certificate/${Certificate}
+            SslSupportMethod: sni-only
+
+  WebsiteDNSName:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub dev.${DomainName}
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2
+        DNSName: !GetAtt [DevServerWebsiteCloudfront, DomainName]
+
+  DevServerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !ImportValue HF-CTF-VPC
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckIntervalSeconds: 30
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
+
+  APIDomain:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub api-dev.${DomainName}
+      Type: CNAME
+      TTL: '300'
+      ResourceRecords:
+      - !ImportValue HF-CTF-ApplicationLoadBalancerDns
+
+  HttpListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      ListenerArn: !ImportValue HF-CTF-LoadBalancerListenerArn
+      Priority: 2
+      Conditions:
+      - Field: host-header
+        Values:
+        - !Sub api-dev.${DomainName}
+      Actions:
+      - TargetGroupArn: !Ref DevServerTargetGroup
+        Type: forward
+
+  DevServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !ImportValue HF-CTF-VPC
+      GroupDescription: Allow access to the dev server from anywhere
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+
+  DevServerTask:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      Family: hf-ctf-fargate-backend
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+      - FARGATE
+      Cpu: 256
+      Memory: 0.5GB
+      ContainerDefinitions:
+      - Name: hf-ctf-fargate-backend
+        Image: !Sub
+        - '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepo}'
+        - ECRRepo: !ImportValue HF-CTF-ECRRepo
+        MemoryReservation: 256
+        PortMappings:
+        - ContainerPort: 80
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref AWS::StackName
+            awslogs-region: !Ref AWS::Region
+            awslogs-stream-prefix: hf-ctf-fargate-backend
+      ExecutionRoleArn: !Ref DevServerExecutionRole
+      TaskRoleArn: !Ref DevServerTaskRole
+
+  DevServerService:
+    Type: AWS::ECS::Service
+    DependsOn: DevServerTargetGroup
+    Properties:
+      Cluster: !ImportValue HF-CTF-ECSCluster
+      DesiredCount: 1
+      TaskDefinition: !Ref DevServerTask
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          SecurityGroups:
+          - !Ref DevServerSecurityGroup
+          Subnets:
+          - !ImportValue HF-CTF-SubnetNatAZ0
+          - !ImportValue HF-CTF-SubnetNatAZ1
+      LoadBalancers:
+      - ContainerName: hf-ctf-fargate-backend
+        ContainerPort: 80
+        TargetGroupArn: !Ref DevServerTargetGroup
+
+  CloudWatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref AWS::StackName
+      RetentionInDays: 365
+
+  DevServerTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: DevServerRole
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service: ecs-tasks.amazonaws.com
+          Action:
+          - "sts:AssumeRole"
+      Policies:
+      - PolicyName: !Sub ${AWS::StackName}-DevServerTaskPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            - s3:ListBucket
+            Resource:
+            - Fn::Sub:
+              - arn:aws:s3:::${CTFBucket}/*
+              - CTFBucket:
+                  Fn::ImportValue: HF-CTF-DevServer-Bucket
+            - Fn::Sub:
+              - arn:aws:s3:::${CTFBucket}
+              - CTFBucket:
+                  Fn::ImportValue: HF-CTF-DevServer-Bucket
+
+  DevServerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service: ecs-tasks.amazonaws.com
+          Action:
+          - "sts:AssumeRole"
+      Policies:
+      - PolicyName: !Sub ${AWS::StackName}-DevServerExecutionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - ecr:GetAuthorizationToken
+            - ecr:BatchCheckLayerAvailability
+            - ecr:GetDownloadUrlForLayer
+            - ecr:BatchGetImage
+            - logs:Create*
+            - logs:Put*
+            Resource: '*'

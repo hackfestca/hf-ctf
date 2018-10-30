@@ -1,0 +1,66 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Provision the Hackfest CTF's ECR Repo
+
+Parameters:
+  DomainName:
+    Type: String
+
+Resources:
+  ECSCluster:
+    Type: "AWS::ECS::Cluster"
+    Properties:
+      ClusterName: !Ref AWS::StackName
+
+  ECRRepo:
+    Type: "AWS::ECR::Repository"
+    Properties:
+      RepositoryName: hf-ctf-fargate-backend
+
+  ProdServerBucket:
+    Type: AWS::S3::Bucket
+
+  DevServerFrontendBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketName: !Sub dev.${DomainName}
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  DevServerFrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref DevServerFrontendBucket
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Sid: DevServerFrontendBucketPolicy
+          Effect: Allow
+          Principal: '*'
+          Action:
+          - s3:GetObject
+          Resource:
+          - !Sub arn:aws:s3:::${DevServerFrontendBucket}/*
+
+Outputs:
+  ECRRepo:
+    Value: !Ref ECRRepo
+    Export:
+      Name: HF-CTF-ECRRepo
+  ECSCluster:
+    Value: !Ref ECSCluster
+    Export:
+      Name: HF-CTF-ECSCluster
+  ProdServerBucket:
+    Value: !Ref ProdServerBucket
+    Export:
+      Name: HF-CTF-ProdServer-Bucket
+  DevServerBucket:
+    Value: !Ref DevServerFrontendBucket
+    Export:
+      Name: HF-CTF-DevServer-Bucket
+  DevServerBucketDomain:
+    Value: !GetAtt [DevServerFrontendBucket, DomainName]
+    Export:
+      Name: HF-CTF-DevServer-BucketDomain
