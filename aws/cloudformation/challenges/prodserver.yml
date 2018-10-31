@@ -165,7 +165,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneId: !Ref HostedZoneId
-      Name: !Sub prod.${DomainName}
+      Name: !Sub www.${DomainName}
       Type: CNAME
       TTL: '300'
       ResourceRecords:
@@ -209,7 +209,7 @@ Resources:
       Conditions:
       - Field: host-header
         Values:
-        - !Sub prod.${DomainName}
+        - !Sub www.${DomainName}
       Actions:
       - TargetGroupArn: !Ref HFCTFTargetGroup
         Type: forward

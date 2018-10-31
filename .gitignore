@@ -1,5 +1,7 @@
 .secrets
 .DS_Store
+.idea
+misc
 dist
 ctf/hex_secretserver/app.py
 ctf/oct_secretserver/app.py

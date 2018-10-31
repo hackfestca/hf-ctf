@@ -12,6 +12,7 @@ services:
     networks:
       ssrf:
         ipv4_address: 10.0.0.110
+
   easy.corp:
     environment:
       - FLAG=${FLAG2}
@@ -20,6 +21,7 @@ services:
     networks:
       ssrf:
         ipv4_address: 10.0.0.15
+
   secrety.corp:
     environment:
       - FLAG=${FLAG3}
@@ -28,6 +30,7 @@ services:
     networks:
       ssrf:
         ipv4_address: 10.0.0.38
+
   hidey.corp:
     environment:
       - FLAG=${FLAG4}
@@ -36,6 +39,7 @@ services:
     networks:
       ssrf:
         ipv4_address: ${SECRETSERVER_IP}
+
   octy.corp:
     environment:
       - FLAG=${FLAG5}
@@ -44,6 +48,7 @@ services:
     networks:
       ssrf:
         ipv4_address: 10.34.0.67
+
   hexy.corp:
     environment:
       - FLAG=${FLAG6}
@@ -52,6 +57,7 @@ services:
     networks:
       ssrf:
         ipv4_address: 10.55.55.189
+
   shorty.corp:
     environment:
       - FLAG=${FLAG7}
@@ -60,6 +66,7 @@ services:
     networks:
       ssrf:
         ipv4_address: 10.0.0.5
+        
 networks:
   ssrf:
     ipam:
