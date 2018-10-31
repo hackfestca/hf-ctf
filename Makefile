@@ -39,7 +39,7 @@ challenges: package-challenges update-challenges clean
 	aws ssm put-parameter --name 'Flag6' --type "SecureString" --value $(FLAG_6)
 	aws ssm put-parameter --name 'Flag7' --type "SecureString" --value $(FLAG_7)
 	aws ssm put-parameter --name 'SecretServerIp' --type "SecureString" --value $(SECRETSERVER_IP)
-	-aws cloudformation deploy --template-file $(GENERATED_CHALLENGES_TEMPLATE_ABSOLUTE_PATH) --stack-name HF-CTF-Challenges --parameter-overrides DomainName=$(DOMAIN_NAME) Certificate=$(CERTIFICATE) HostedZoneId=$(HOSTED_ZONE) --capabilities CAPABILITY_IAM
+	-aws cloudformation deploy --template-file $(GENERATED_CHALLENGES_TEMPLATE_ABSOLUTE_PATH) --stack-name HF-CTF-Challenges --parameter-overrides DomainName=$(DOMAIN_NAME) Certificate=$(CERTIFICATE) HostedZoneId=$(HOSTED_ZONE) Flag=$(FLAG_3) --capabilities CAPABILITY_IAM
 
 devserver: package-devserver build-and-push-container update-devserver
 	-aws cloudformation deploy --template-file $(GENERATED_CHALLENGES_DEVSERVER_TEMPLATE_ABSOLUTE_PATH) --stack-name HF-CTF-DevServer --parameter-overrides DomainName=$(DOMAIN_NAME) Certificate=$(CERTIFICATE) HostedZoneId=$(HOSTED_ZONE) --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM

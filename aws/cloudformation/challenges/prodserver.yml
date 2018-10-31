@@ -9,6 +9,9 @@ Parameters:
     Type: String
   HostedZoneId:
     Type: String
+  Flag:
+    Type: String
+    NoEcho: True
 
 Resources:
   Ec2Backend:
@@ -56,7 +59,7 @@ Resources:
 
             export FLAG1=`aws ssm get-parameter --name 'Flag1' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
             export FLAG2=`aws ssm get-parameter --name 'Flag2' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
-            export FLAG3=`aws ssm get-parameter --name 'Flag3' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
+            export FLAG3=${Flag}
             export FLAG4=`aws ssm get-parameter --name 'Flag4' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
             export FLAG5=`aws ssm get-parameter --name 'Flag5' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
             export FLAG6=`aws ssm get-parameter --name 'Flag6' --region ${AWS::Region} --with-decryption --query="Parameter.Value" --output text`
