@@ -1,8 +1,8 @@
 NETWORK_SOURCE_TEMPLATE_PATH = aws/cloudformation/prerequisites/network/network.yml
 GENERATED_NETWORK_TEMPLATE_ABSOLUTE_PATH = $(shell pwd)/dist/$(NETWORK_SOURCE_TEMPLATE_PATH)
 
-ECS_SOURCE_TEMPLATE_PATH = aws/cloudformation/prerequisites/ecs-cluster/ecs-cluster.yml
-GENERATED_ECS_TEMPLATE_ABSOLUTE_PATH = $(shell pwd)/dist/$(ECS_SOURCE_TEMPLATE_PATH)
+STATIC_SOURCE_TEMPLATE_PATH = aws/cloudformation/prerequisites/static/static.yml
+GENERATED_STATIC_TEMPLATE_ABSOLUTE_PATH = $(shell pwd)/dist/$(STATIC_SOURCE_TEMPLATE_PATH)
 
 FLAG_SOURCE_TEMPLATE_PATH = aws/cloudformation/challenges/flag.yml
 GENERATED_FLAG_TEMPLATE_ABSOLUTE_PATH = $(shell pwd)/dist/$(FLAG_SOURCE_TEMPLATE_PATH)
@@ -19,7 +19,7 @@ package-network:
 	aws cloudformation package --template-file $(NETWORK_SOURCE_TEMPLATE_PATH) --s3-bucket $(BUCKET_NAME) --s3-prefix cloudformation/hf-ctf --output-template-file $(GENERATED_NETWORK_TEMPLATE_ABSOLUTE_PATH)
 
 package-ecs:
-	aws cloudformation package --template-file $(ECS_SOURCE_TEMPLATE_PATH) --s3-bucket $(BUCKET_NAME) --s3-prefix cloudformation/hf-ctf --output-template-file $(GENERATED_ECS_TEMPLATE_ABSOLUTE_PATH)
+	aws cloudformation package --template-file $(STATIC_SOURCE_TEMPLATE_PATH) --s3-bucket $(BUCKET_NAME) --s3-prefix cloudformation/hf-ctf --output-template-file $(GENERATED_STATIC_TEMPLATE_ABSOLUTE_PATH)
 
 package-challenges:
 	aws cloudformation package --template-file $(CHALLENGES_SOURCE_TEMPLATE_PATH) --s3-bucket $(BUCKET_NAME) --s3-prefix cloudformation/hf-ctf --output-template-file $(GENERATED_CHALLENGES_TEMPLATE_ABSOLUTE_PATH)
@@ -63,13 +63,13 @@ delete-challenges:
 	aws cloudformation delete-stack --stack-name HF-CTF-Challenges
 
 ecs: package-ecs
-	-aws cloudformation deploy --template-file $(GENERATED_ECS_TEMPLATE_ABSOLUTE_PATH) --parameter-overrides DomainName=$(DOMAIN_NAME) --stack-name HF-CTF-EcsCluster
+	-aws cloudformation deploy --template-file $(GENERATED_STATIC_TEMPLATE_ABSOLUTE_PATH) --parameter-overrides DomainName=$(DOMAIN_NAME) --stack-name HF-CTF-StaticResources
 
 network: package-network
 	-aws cloudformation deploy --template-file $(GENERATED_NETWORK_TEMPLATE_ABSOLUTE_PATH) --stack-name HF-CTF-Network --parameter-overrides DomainName=$(DOMAIN_NAME) Certificate=$(CERTIFICATE) HostedZoneId=$(HOSTED_ZONE) --capabilities CAPABILITY_IAM
 
 flag: package-flag
-	aws cloudformation deploy --template-file $(GENERATED_FLAG_TEMPLATE_ABSOLUTE_PATH) --stack-name HF-CTF-Flags --parameter-overrides Secret=$(FLAG_10) --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
+	aws cloudformation deploy --template-file $(GENERATED_FLAG_TEMPLATE_ABSOLUTE_PATH) --stack-name HF-CTF-Flag --parameter-overrides Secret=$(FLAG_10) --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 
 prerequisites: network ecs update-challenges
 

@@ -105,14 +105,14 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
       - FARGATE
-      Cpu: 256
-      Memory: 0.5GB
+      Cpu: 4096
+      Memory: 30GB
       ContainerDefinitions:
       - Name: hf-ctf-fargate-backend
         Image: !Sub
         - '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepo}'
         - ECRRepo: !ImportValue HF-CTF-ECRRepo
-        MemoryReservation: 256
+        MemoryReservation: 4096
         PortMappings:
         - ContainerPort: 80
         LogConfiguration:
@@ -180,6 +180,10 @@ Resources:
               - arn:aws:s3:::${CTFBucket}
               - CTFBucket:
                   Fn::ImportValue: HF-CTF-DevServer-Bucket
+          - Effect: Allow
+            Action:
+            - sts:AssumeRole
+            Resource: "*"
 
   DevServerExecutionRole:
     Type: AWS::IAM::Role

@@ -26,7 +26,7 @@ Resources:
             - docker-compose
     Properties:
       ImageId: ami-04681a1dbd79675a5
-      InstanceType: t2.nano
+      InstanceType: t2.2xlarge
       KeyName: hf-ctf
       BlockDeviceMappings:
       - DeviceName: /dev/xvda
