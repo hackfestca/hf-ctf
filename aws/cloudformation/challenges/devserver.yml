@@ -183,7 +183,7 @@ Resources:
           - Effect: Allow
             Action:
             - sts:AssumeRole
-            Resource: "*"
+            Resource: arn:aws:iam::*:role/TheLastRole
 
   DevServerExecutionRole:
     Type: AWS::IAM::Role
