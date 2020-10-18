@@ -71,7 +71,7 @@ flag: package-flag
 
 prerequisites: network ecs update-challenges
 
-all: prerequisites challenges devserver clean
+all: prerequisites challenges devserver flag clean
 
 empty-bucket: export CTF_BUCKET_NAME=$(shell aws cloudformation list-exports --no-paginate --query "Exports[?Name=='HF-CTF-Bucket'].Value | [0]" --output text)
 empty-bucket:
