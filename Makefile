@@ -34,14 +34,12 @@ challenges: package-challenges update-challenges clean
 	aws ssm put-parameter --name 'Flag1' --type "SecureString" --value $(FLAG_1)
 	aws ssm put-parameter --name 'Flag2' --type "SecureString" --value $(FLAG_2)
 	aws ssm put-parameter --name 'Flag3' --type "SecureString" --value $(FLAG_3)
-	aws ssm put-parameter --name 'Flag4' --type "SecureString" --value $(FLAG_4)
 	aws ssm put-parameter --name 'Flag5' --type "SecureString" --value $(FLAG_5)
 	aws ssm put-parameter --name 'Flag6' --type "SecureString" --value $(FLAG_6)
 	aws ssm put-parameter --name 'Flag7' --type "SecureString" --value $(FLAG_7)
-	aws ssm put-parameter --name 'SecretServerIp' --type "SecureString" --value $(SECRETSERVER_IP)
 	-aws cloudformation deploy --template-file $(GENERATED_CHALLENGES_TEMPLATE_ABSOLUTE_PATH) --stack-name HF-CTF-Challenges --parameter-overrides DomainName=$(DOMAIN_NAME) Certificate=$(CERTIFICATE) HostedZoneId=$(HOSTED_ZONE) Flag=$(FLAG_3) --capabilities CAPABILITY_IAM
 
-devserver: package-devserver build-and-push-container update-devserver
+devserver: package-devserver build-and-push-container update-devserver flag
 	-aws cloudformation deploy --template-file $(GENERATED_CHALLENGES_DEVSERVER_TEMPLATE_ABSOLUTE_PATH) --stack-name HF-CTF-DevServer --parameter-overrides DomainName=$(DOMAIN_NAME) Certificate=$(CERTIFICATE) HostedZoneId=$(HOSTED_ZONE) --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM
 
 update-challenges: export CTF_BUCKET_NAME=$(shell aws cloudformation list-exports --no-paginate --query "Exports[?Name=='HF-CTF-ProdServer-Bucket'].Value | [0]" --output text)
@@ -83,11 +81,8 @@ clean:
 	-aws ssm delete-parameter --name 'Flag1'
 	-aws ssm delete-parameter --name 'Flag2'
 	-aws ssm delete-parameter --name 'Flag3'
-	-aws ssm delete-parameter --name 'Flag4'
 	-aws ssm delete-parameter --name 'Flag5'
 	-aws ssm delete-parameter --name 'Flag6'
 	-aws ssm delete-parameter --name 'Flag7'
-	-aws ssm delete-parameter --name 'Flag8'
 	-aws ssm delete-parameter --name 'Flag9'
 	-aws ssm delete-parameter --name 'Flag10'
-	-aws ssm delete-parameter --name 'SecretServerIp'

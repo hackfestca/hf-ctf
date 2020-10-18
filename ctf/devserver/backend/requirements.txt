@@ -1,4 +1,3 @@
 boto3
-pprint
 flask
 flask-cors

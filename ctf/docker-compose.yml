@@ -7,8 +7,6 @@ services:
         - FLAG=${FLAG1}
     ports:
       - "8000:80"
-    links:
-    - hidey.corp
     networks:
       ssrf:
         ipv4_address: 10.0.0.110
@@ -21,15 +19,6 @@ services:
     networks:
       ssrf:
         ipv4_address: 10.0.0.15
-
-  hidey.corp:
-    environment:
-      - FLAG=${FLAG4}
-      - CUTENAME=hidey
-    build: other_secretservers/
-    networks:
-      ssrf:
-        ipv4_address: ${SECRETSERVER_IP}
 
   octy.corp:
     environment:

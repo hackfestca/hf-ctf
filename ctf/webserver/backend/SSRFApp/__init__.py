@@ -12,9 +12,6 @@ def index():
     #FLAG 3
     if '10.0.0.38' in url or 'secrety.corp' in url:
         return 'Restricted Area!'
-    #FLAG 4
-    if host == 'hidey.corp':
-        return 'Restricted Area!'
     else:
         return urllib.urlopen(url).read()
 

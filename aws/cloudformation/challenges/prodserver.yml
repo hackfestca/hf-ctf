@@ -25,9 +25,8 @@ Resources:
             - docker
             - docker-compose
     Properties:
-      ImageId: ami-04681a1dbd79675a5
-      InstanceType: t2.2xlarge
-      KeyName: hf-ctf
+      ImageId: ami-0947d2ba12ee1ff75
+      InstanceType: t2.medium
       BlockDeviceMappings:
       - DeviceName: /dev/xvda
         Ebs:
@@ -50,6 +49,7 @@ Resources:
           - |
             #!/bin/bash
 
+            yum install -y gcc
             yum install -y docker python-pip git
             pip install docker-compose
 
@@ -98,6 +98,8 @@ Resources:
             Service: ec2.amazonaws.com
           Action:
           - "sts:AssumeRole"
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
       - PolicyName: !Sub ${AWS::StackName}-HF-CTFExecutionPolicy
         PolicyDocument:
@@ -168,7 +170,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneId: !Ref HostedZoneId
-      Name: !Sub www.${DomainName}
+      Name: !Sub ssrf.${DomainName}
       Type: CNAME
       TTL: '300'
       ResourceRecords:
@@ -212,7 +214,7 @@ Resources:
       Conditions:
       - Field: host-header
         Values:
-        - !Sub www.${DomainName}
+        - !Sub ssrf.${DomainName}
       Actions:
       - TargetGroupArn: !Ref HFCTFTargetGroup
         Type: forward

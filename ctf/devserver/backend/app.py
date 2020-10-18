@@ -1,7 +1,6 @@
 import os
 import json
 import boto3
-import pprint
 from urllib.parse import unquote
 from urllib.request import urlopen
 from os import listdir
