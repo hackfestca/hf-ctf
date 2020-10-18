@@ -85,4 +85,3 @@ clean:
 	-aws ssm delete-parameter --name 'Flag6'
 	-aws ssm delete-parameter --name 'Flag7'
 	-aws ssm delete-parameter --name 'Flag9'
-	-aws ssm delete-parameter --name 'Flag10'
