@@ -26,7 +26,7 @@ Resources:
             - docker-compose
     Properties:
       ImageId: ami-0947d2ba12ee1ff75
-      InstanceType: t2.medium
+      InstanceType: t2.2xlarge
       BlockDeviceMappings:
       - DeviceName: /dev/xvda
         Ebs:
